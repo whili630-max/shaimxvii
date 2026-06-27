@@ -815,7 +815,6 @@ let heroR, heroSc, heroCam, parts;
 function initHero() {
   /* Removed Three.js &#8212; using CSS particles instead */
 }
-}
 
 /* &#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;
    LOADER SEQUENCE
@@ -1128,11 +1127,87 @@ async function submitDonation() {
   const name = document.getElementById('donName').value.trim() || (PROFILE?.username || '&#1586;&#1575;&#1574;&#1585;');
   const amt  = parseFloat(document.getElementById('donAmt').value);
   const msg  = document.getElementById('donMsg').value.trim();
-  if (!amt || amt <= 0) { toast('&#1571;&#65533;oast(msg, ic='&#183;') {
+  if (!amt || amt <= 0) { toast('&#1571;&#1583;&#1582;&#1604; &#1605;&#1576;&#1604;&#1594;&#1611; &#1589;&#1581;&#1610;&#1581;&#1611;&#1575;','&#9888;&#65039;','warn'); return; }
+  const { error } = await db.from('donations').insert({ name, amount: amt, message: msg });
+  if (error) { toast('&#1601;&#1588;&#1604; &#1573;&#1585;&#1587;&#1575;&#1604; &#1575;&#1604;&#1578;&#1593;&#1586;&#1610;&#1586;: ' + error.message,'&#9888;&#65039;','warn'); return; }
+  document.getElementById('donName').value = '';
+  document.getElementById('donAmt').value = '';
+  document.getElementById('donMsg').value = '';
+  document.querySelectorAll('.don-amt-btn').forEach(b => b.classList.remove('sel'));
+  toast(`&#1588;&#1603;&#1585;&#1611;&#1575; ${name}! &#1578;&#1605; &#1573;&#1585;&#1587;&#1575;&#1604; ${amt} &#1585;&#1610;&#1575;&#1604; &#128156;`,'&#128156;','ok');
+}
+
+/* &#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;
+   STATS &#8212; SUPABASE
+&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552; */
+async function loadStats() {
+  try {
+    const [chatRes, donRes] = await Promise.all([
+      db.from('chat_messages').select('id', { count: 'exact', head: true }),
+      db.from('donations').select('amount')
+    ]);
+    const chatCount = chatRes.count || 0;
+    const donCount  = donRes.data?.length || 0;
+    const donTotal  = donRes.data?.reduce((s, r) => s + (r.amount || 0), 0) || 0;
+    document.getElementById('chatCnt').textContent       = chatCount + ' &#1585;&#1587;&#1575;&#1604;&#1577;';
+    document.getElementById('chatCountHome').textContent = chatCount;
+    document.getElementById('donCountHome').textContent  = donCount;
+    document.getElementById('donTotal').textContent      = '&#1573;&#1580;&#1605;&#1575;&#1604;&#1610; &#1575;&#1604;&#1578;&#1593;&#1586;&#1610;&#1586;&#1575;&#1578;: ' + donTotal + ' &#1585;&#1610;&#1575;&#1604;';
+  } catch(e) { console.warn('loadStats:', e); }
+}
+
+/* &#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;
+   RECENT DONATIONS
+&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552; */
+async function loadRecentDonations() {
+  try {
+    const { data } = await db.from('donations').select('*').order('created_at', { ascending: false }).limit(1).single();
+    if (!data) return;
+    document.getElementById('donTxt').innerHTML =
+      `<strong>${data.name}</strong> &#1571;&#1585;&#1587;&#1604; ${data.amount} &#1585;&#1610;&#1575;&#1604;${data.message ? ' &#8212; ' + data.message : ''} &#128156;`;
+  } catch(e) { console.warn('loadRecentDonations:', e); }
+}
+
+/* &#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;
+   SPOTIFY
+&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552; */
+async function fetchSpotify() {
+  const body = document.getElementById('spBody');
+  body.innerHTML = '<div class="sp-null">&#1580;&#1575;&#1585;&#1610; &#1575;&#1604;&#1578;&#1581;&#1605;&#1610;&#1604;...</div>';
+  try {
+    const { data } = await db.from('spotify_status').select('*').order('updated_at', { ascending: false }).limit(1).single();
+    if (!data || !data.is_playing) { body.innerHTML = '<div class="sp-null">&#1594;&#1610;&#1585; &#1605;&#1588;&#1594;&#1617;&#1604; &#1575;&#1604;&#1570;&#1606;</div>'; return; }
+    const pct = data.duration_ms > 0 ? Math.round((data.progress_ms / data.duration_ms) * 100) : 0;
+    const fmt = ms => `${Math.floor(ms/60000)}:${String(Math.floor((ms%60000)/1000)).padStart(2,'0')}`;
+    body.innerHTML = `
+      <div class="sp-art">${data.album_image ? `<img src="${data.album_image}" alt="">` : '&#127925;'}</div>
+      <div class="sp-info">
+        <div class="sp-track">${data.track_name || '&#8212;'}</div>
+        <div class="sp-artist">${data.artist_name || '&#8212;'}</div>
+        <div class="sp-prog"><div class="sp-fill" style="width:${pct}%"></div></div>
+        <div class="sp-st"><span>${fmt(data.progress_ms||0)}</span><span>${fmt(data.duration_ms||0)}</span></div>
+      </div>
+      <div class="sp-eq"><div></div><div></div><div></div></div>`;
+  } catch { body.innerHTML = '<div class="sp-null">&#1594;&#1610;&#1585; &#1605;&#1588;&#1594;&#1617;&#1604; &#1575;&#1604;&#1570;&#1606;</div>'; }
+}
+
+/* &#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;
+   UTILS
+&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552; */
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function showErr(id, msg) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.textContent = msg; el.style.display = 'block';
+  setTimeout(() => { el.style.display = 'none'; }, 3500);
+}
+function toast(msg, ic, cls) {
   const w = document.getElementById('toasts');
   const t = document.createElement('div');
-  t.className = 'toast';
-  t.innerHTML = `<span class="t-ic">${ic}</span><span>${msg}</span>`;
+  t.className = 'toast' + (cls ? ' ' + cls : '');
+  t.innerHTML = `<span class="t-ic">${ic||'&#183;'}</span><span>${msg}</span>`;
   w.appendChild(t);
   setTimeout(() => { t.style.transition='opacity .22s'; t.style.opacity='0'; setTimeout(()=>t.remove(),230); }, 2600);
 }
